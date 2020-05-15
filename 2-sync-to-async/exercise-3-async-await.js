@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
+const util = require("util");
 
 // declare constants
 const EXERCISE_NAME = path.basename(__filename);
@@ -9,8 +10,8 @@ const START = Date.now();
 
 // declare logging function
 const log = (logId, value) => console.log(
-  `\nlog ${logId} (${Date.now() - START} ms):\n`,
-  value,
+    `\nlog ${logId} (${Date.now() - START} ms):\n`,
+    value,
 );
 
 
@@ -26,21 +27,33 @@ log(2, toAppend);
 const numberOfTimes = Number(process.argv[4]);
 log(3, numberOfTimes);
 
-log(4, 'reading old contents ...');
-const oldContents = fs.readFileSync(filePath, 'utf-8');
+const readFileAsync = util.promisify(fs.readFileSync);
+const appendFileASc = util.promisify(fs.appendFileSync);
 
-for (let i = 1; i <= numberOfTimes; i++) {
-  log(4 + i, `appending ...`);
-  fs.appendFileSync(filePath, toAppend);
+async function asyncWait(file1, toAppend, numberOfTimes) {
+    try {
+        log(4, 'reading old contents ...');
+        const oldContents = await readFileAsync(file1, 'utf-8');
+
+        for (let i = 1; i <= numberOfTimes; i++) {
+            log(4 + i, `appending ...`);
+            await appendFileASc(file1, toAppend);
+        };
+
+        log(numberOfTimes + 5, 'reading new contents ...');
+        const newContents = await readFileAsync(filePath, 'utf-8');
+
+        log(numberOfTimes + 6, 'asserting file contents ...');
+        const expectedContents = oldContents + toAppend.repeat(numberOfTimes);
+        assert.strictEqual(newContents, expectedContents);
+
+        log(numberOfTimes + 7, '\033[32mpass!\x1b[0m');
+        appendFileASc(__filename, `\n// pass: ${(new Date()).toLocaleString()}`);
+
+
+    } catch (err) {
+        console.error(err);
+        return;
+    }
 };
-
-log(numberOfTimes + 5, 'reading new contents ...');
-const newContents = fs.readFileSync(filePath, 'utf-8');
-
-log(numberOfTimes + 6, 'asserting file contents ...');
-const expectedContents = oldContents + toAppend.repeat(numberOfTimes);
-assert.strictEqual(newContents, expectedContents);
-
-log(numberOfTimes + 7, '\033[32mpass!\x1b[0m');
-fs.appendFileSync(__filename, `\n// pass: ${(new Date()).toLocaleString()}`);
-
+asyncWait(filePath, toAppend, numberOfTimes);
