@@ -54,3 +54,14 @@ readPromise(filePath1, 'utf-8').then((oldFile1) => {
         }).catch((err) => console.log(err));
     }).catch((err) => console.log(err));
 }).catch((err) => console.log(err));
+
+//tomake more readable shorter code u can use promise.all
+
+//.all([
+//readFilePromise(filePath1, "utf-8"),
+//readFilePromise(filePath2, "utf-8")]).then((data) => {
+//return Promise.all([
+    //writeFilePromise(filePath1, data[1]),
+    //writeFilePromise(filePath2, data[0])
+    //});
+    //})
